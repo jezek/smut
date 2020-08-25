@@ -34,27 +34,43 @@ func main() {
 	}
 
 	recv := i3.Subscribe(i3.WindowEventType)
+eventloop:
 	for recv.Next() {
 		switch ev := recv.Event().(type) {
 		case *i3.WindowEvent:
 			logger.Printf("Got WindowEvent: %v(%d) -  %s", ev.Change, ev.Container.ID, ev.Container.Name)
 			if ev.Change == "focus" {
-				if lastFocusedNode == nil || lastFocusedNode.ID != ev.Container.ID {
-					setNodeOpacity(ev.Container, 1)
+				// The ev.Container got focused.
 
-					focusedWorkspace, err := getNodeWorkspace(&ev.Container)
-					if err != nil {
-						logger.Printf("Error getting node (ID: %d) workspace: %v", ev.Container.ID, err)
-						break
-					}
-
-					if lastFocusedNode != nil && focusedWorkspace != nil && lastFocusedWorkspace.ID == focusedWorkspace.ID {
-						setNodeOpacity(*lastFocusedNode, unfocusedOpacity)
-					}
-
-					lastFocusedNode = &ev.Container
-					lastFocusedWorkspace = focusedWorkspace
+				// Focused container is the same as last focused container. Do nothing.
+				if lastFocusedNode != nil && lastFocusedNode.ID == ev.Container.ID {
+					continue eventloop
 				}
+
+				// Make focussed node opaque.
+				setNodeOpacity(ev.Container, 1)
+
+				// Get workspace for focused node.
+				focusedWorkspace, err := getNodeWorkspace(&ev.Container)
+				if err != nil {
+					logger.Printf("Error getting node (ID: %d) workspace: %v", ev.Container.ID, err)
+					break eventloop
+				}
+
+				if focusedWorkspace == nil {
+					// There is no workspace for ev.Container. This means the container is gone. Nothing to do, wait for new event.
+					logger.Printf("Workspace for focused container does not exist")
+					continue eventloop
+				}
+
+				// If not swithcing workspaces, make last focused container transparent.
+				if lastFocusedNode != nil && lastFocusedWorkspace.ID == focusedWorkspace.ID {
+					setNodeOpacity(*lastFocusedNode, unfocusedOpacity)
+				}
+
+				// Set current focused contaainerwokspace as last focused node/workspace.
+				lastFocusedNode = &ev.Container
+				lastFocusedWorkspace = focusedWorkspace
 			}
 		default:
 			logger.Printf("Unrecognized event type: %#v", ev)

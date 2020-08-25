@@ -1,5 +1,5 @@
-# Swaywm only focused opaque (sofo)
-App for swaywm, written in golang. Keeps all windows semi-transparent, except focused, which is opaque.
+# Sway make unfocused transparent (smut).
+App for swaywm, written in golang. Keeps all windows (semi)transparent, except focused.
 
 # Dependencies
 - [go-i3](https://github.com/i3/go-i3) 
