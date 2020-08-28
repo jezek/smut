@@ -1,4 +1,4 @@
-module github.com/jezek/sofo
+module github.com/jezek/smut
 
 go 1.14
 
